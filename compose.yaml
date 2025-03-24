@@ -1,0 +1,53 @@
+services:
+  # Spring Boot application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      SERVER_PORT: 8080
+      SPRING_R2DBC_URL: r2dbc:postgresql://db:5433/postgres
+      SPRING_R2DBC_USERNAME: postgres
+      SPRING_R2DBC_PASSWORD: changemeinprod!
+      SPRING_FLYWAY_URL: jdbc:postgresql://db:5433/postgres
+      SPRING_FLYWAY_USER: postgres
+      SPRING_FLYWAY_PASSWORD: changemeinprod!
+    depends_on:
+      - db
+    restart: always
+
+  # PostgreSQL database
+#  db:
+#    image: postgres:latest
+#    ports:
+#      - "5433:5433"
+#    environment:
+#      POSTGRES_PASSWORD: changemeinprod!
+#      POSTGRES_DB: postgres
+#      POSTGRES_USER: postgres
+#    volumes:
+#      - postgres_data2:/var/lib/postgresql/data
+#    restart: always
+  db:
+    image: postgres:latest
+    ports:
+      - "5433:5433"
+    command: -p 5433
+    environment:
+      POSTGRES_PASSWORD: changemeinprod!
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+    volumes:
+      - postgres_data2:/var/lib/postgresql/data
+    restart: always
+
+volumes:
+  postgres_data2:
+
+
+#Before running docker compose, build your application with:
+#  ./gradlew bootJar
+#Then you can start everything with:
+#  docker compose up --build
