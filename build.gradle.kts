@@ -70,6 +70,12 @@ dependencies {
 
 	implementation("io.projectreactor.netty:reactor-netty")
 
+	implementation("org.springframework.kafka:spring-kafka")
+	implementation("org.springframework.kafka:spring-kafka-test")
+
+	// Redis
+	implementation("org.springframework.boot:spring-boot-starter-data-redis")
+	implementation("org.springframework.boot:spring-boot-starter-cache")
 }
 
 kotlin {
