@@ -66,7 +66,7 @@ class SecurityConfig(
             .authorizeExchange {
                 it.pathMatchers(HttpMethod.POST, "/v1/auth/login", "/v1/auth/refresh", "/v1/auth/register").permitAll()
                 it.pathMatchers(HttpMethod.POST, "/v1/users").hasAnyAuthority("ADMIN","MANAGER")
-                it.pathMatchers(HttpMethod.GET, "/v1/users/{id}").hasAnyRole("ADMIN", "MANAGER")
+                it.pathMatchers(HttpMethod.GET, "/v1/users/{id}").permitAll()
                 it.pathMatchers(HttpMethod.GET, "/v1/users/me").authenticated()
                 it.pathMatchers(HttpMethod.PUT, "/v1/users/{id}").hasAnyRole("ADMIN", "MANAGER")
                 it.pathMatchers(HttpMethod.DELETE, "/v1/users/{id}").hasRole("ADMIN")

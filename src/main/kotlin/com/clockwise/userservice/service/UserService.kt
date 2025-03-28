@@ -5,11 +5,13 @@ import com.clockwise.userservice.domain.UserRole
 import com.clockwise.userservice.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import org.slf4j.LoggerFactory
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.reactive.TransactionalOperator
 import reactor.core.publisher.Mono
 import java.util.*
 import kotlin.NoSuchElementException
@@ -19,7 +21,8 @@ data class UserDto(
     val username: String,
     val email: String,
     val role: UserRole,
-    val restaurantId: String?
+    val restaurantId: String?,
+    var businessUnitName: String?,
 )
 
 data class CreateUserRequest(
@@ -43,14 +46,19 @@ private fun User.toDto() = UserDto(
     username = username,
     email = email,
     role = role,
-    restaurantId = restaurantId
+    restaurantId = restaurantId,
+    businessUnitName = null
 )
 
 @Service
 class UserService(
     private val userRepository: UserRepository,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val businessUnitCacheService: BusinessUnitCacheService,
+    private val transactionalOperator: TransactionalOperator
+
 ): ReactiveUserDetailsService {
+    private val logger = LoggerFactory.getLogger(UserService::class.java)
 
     suspend fun createUser(request: CreateUserRequest): UserDto {
         if (userRepository.existsByEmail(request.email)) {
@@ -68,13 +76,25 @@ class UserService(
             role = request.role,
             restaurantId = request.restaurantId
         )
+        val userDto = userRepository.save(user).toDto()
+        logger.info("1111111111111111111111111111111111111111111111111111111")
+        val businessUnitName = userDto.restaurantId?.let { businessUnitCacheService.getBusinessUnitName(it) }
+        logger.info("222222222222222222222222222222222222222222 $businessUnitName")
+        userDto.businessUnitName = businessUnitName
 
-        return userRepository.save(user).toDto()
+        return userDto
     }
 
+
     suspend fun getUserById(id: String): UserDto {
-        return userRepository.findById(id)?.toDto()
+        val userDto = userRepository.findById(id)?.toDto()
             ?: throw NoSuchElementException("User not found with ID: $id")
+        logger.info("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
+        val businessUnitName = userDto.restaurantId?.let { businessUnitCacheService.getBusinessUnitName(it) }
+        logger.info("NBBBBBBBNBBBBBBBNBBBBBBBNBBBBBBBNBBBBBBB $businessUnitName")
+        userDto.businessUnitName = businessUnitName
+        return userDto
+
     }
 
     suspend fun getUserByUsername(username: String): UserDto {

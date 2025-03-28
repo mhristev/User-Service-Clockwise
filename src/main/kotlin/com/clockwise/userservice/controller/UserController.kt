@@ -30,6 +30,7 @@ class UserController(private val userService: UserService) {
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     suspend fun getUserById(@PathVariable id: String): ResponseEntity<UserDto> {
+        println("NAANANANANNA")
         return ResponseEntity.ok(userService.getUserById(id))
     }
 
