@@ -30,8 +30,7 @@ class AuthController(private val authService: AuthService, private val userServi
             username = request.username,
             email = request.email,
             password = request.password,
-            role = UserRole.ADMIN,
-            restaurantId = request.restaurantId
+            role = UserRole.EMPLOYEE
         )
 
         val createdUser = userService.createUser(createUserRequest)

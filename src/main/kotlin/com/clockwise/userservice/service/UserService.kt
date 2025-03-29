@@ -21,8 +21,8 @@ data class UserDto(
     val username: String,
     val email: String,
     val role: UserRole,
-    val restaurantId: String?,
-    var businessUnitName: String?,
+    val businessUnitId: String?,
+    val businessUnitName: String?
 )
 
 data class CreateUserRequest(
@@ -30,7 +30,6 @@ data class CreateUserRequest(
     val email: String,
     val password: String,
     val role: UserRole,
-    val restaurantId: String?
 )
 
 data class UpdateUserRequest(
@@ -38,7 +37,8 @@ data class UpdateUserRequest(
     val email: String? = null,
     val password: String? = null,
     val role: UserRole? = null,
-    val restaurantId: String? = null
+    val businessUnitId: String? = null,
+    val businessUnitName: String? = null
 )
 
 private fun User.toDto() = UserDto(
@@ -46,17 +46,15 @@ private fun User.toDto() = UserDto(
     username = username,
     email = email,
     role = role,
-    restaurantId = restaurantId,
-    businessUnitName = null
+    businessUnitId = businessUnitId,
+    businessUnitName = businessUnitName
 )
 
 @Service
 class UserService(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val businessUnitCacheService: BusinessUnitCacheService,
     private val transactionalOperator: TransactionalOperator
-
 ): ReactiveUserDetailsService {
     private val logger = LoggerFactory.getLogger(UserService::class.java)
 
@@ -74,13 +72,14 @@ class UserService(
             email = request.email,
             password = passwordEncoder.encode(request.password),
             role = request.role,
-            restaurantId = request.restaurantId
+            businessUnitId = null,
+            businessUnitName = null
         )
         val userDto = userRepository.save(user).toDto()
-        logger.info("1111111111111111111111111111111111111111111111111111111")
-        val businessUnitName = userDto.restaurantId?.let { businessUnitCacheService.getBusinessUnitName(it) }
-        logger.info("222222222222222222222222222222222222222222 $businessUnitName")
-        userDto.businessUnitName = businessUnitName
+
+      //  val businessUnitName = userDto.restaurantId?.let { businessUnitCacheService.getBusinessUnitName(it) }
+    //    logger.info("222222222222222222222222222222222222222222 $businessUnitName")
+      //  userDto.businessUnitName = businessUnitName
 
         return userDto
     }
@@ -89,10 +88,10 @@ class UserService(
     suspend fun getUserById(id: String): UserDto {
         val userDto = userRepository.findById(id)?.toDto()
             ?: throw NoSuchElementException("User not found with ID: $id")
-        logger.info("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
-        val businessUnitName = userDto.restaurantId?.let { businessUnitCacheService.getBusinessUnitName(it) }
-        logger.info("NBBBBBBBNBBBBBBBNBBBBBBBNBBBBBBBNBBBBBBB $businessUnitName")
-        userDto.businessUnitName = businessUnitName
+//        logger.info("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC")
+//        val businessUnitName = userDto.restaurantId?.let { businessUnitCacheService.getBusinessUnitName(it) }
+//        logger.info("NBBBBBBBNBBBBBBBNBBBBBBBNBBBBBBBNBBBBBBB $businessUnitName")
+//        userDto.businessUnitName = businessUnitName
         return userDto
 
     }
@@ -121,7 +120,7 @@ class UserService(
             email = request.email ?: user.email,
             password = request.password?.let { passwordEncoder.encode(it) } ?: user.password,
             role = request.role ?: user.role,
-            restaurantId = request.restaurantId ?: user.restaurantId
+           // restaurantId = request.restaurantId ?: user.restaurantId
         )
 
         return userRepository.save(updatedUser).toDto()
@@ -136,6 +135,14 @@ class UserService(
 
     fun getUsersByRestaurantId(restaurantId: UUID): Flow<UserDto> {
         return userRepository.findAllByRestaurantId(restaurantId).map { it.toDto() }
+    }
+
+    fun getUsersWithoutBusinessUnit(email: String? = null): Flow<UserDto> {
+        logger.info("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        val u = userRepository.findAllByBusinessUnitIdIsNullAndEmail(email)
+        logger.info("asdaaaaasdaaaaasdaaaaasdaaaaasdaaaaasdaaaaasdaaaa")
+        return userRepository.findAllByBusinessUnitIdIsNullAndEmail(email)
+            .map { it.toDto() }
     }
 
     override fun findByUsername(username: String): Mono<UserDetails> {

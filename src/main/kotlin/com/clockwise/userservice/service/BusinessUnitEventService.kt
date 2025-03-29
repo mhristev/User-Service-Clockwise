@@ -42,6 +42,7 @@ class BusinessUnitEventService(
 
     private fun handleBusinessUnitCreated(event: BusinessUnitEvent) {
         logger.info("Processing BusinessUnit Created Event: id=${event.id}, name=${event.name}")
+
         businessUnitCacheService.cacheBusinessUnitName(event.id, event.name)
     }
 

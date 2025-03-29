@@ -16,5 +16,6 @@ data class User(
     val email: String,
     val password: String,
     val role: UserRole,
-    val restaurantId: String? = null
+    val businessUnitId: String? = null,
+    val businessUnitName: String? = null
 )

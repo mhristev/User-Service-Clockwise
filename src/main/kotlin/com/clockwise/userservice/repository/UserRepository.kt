@@ -22,4 +22,7 @@ interface UserRepository : CoroutineCrudRepository<User, UUID> {
     suspend fun existsByUsername(username: String): Boolean
 
     suspend fun findById(id: String): User?
+
+    @Query("SELECT * FROM users WHERE business_unit_id IS NULL AND (:email IS NULL OR email = :email)")
+    fun findAllByBusinessUnitIdIsNullAndEmail(email: String? = null): Flow<User>
 }

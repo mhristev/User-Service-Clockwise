@@ -1,12 +1,10 @@
 package com.clockwise.userservice.controller
 
-import com.clockwise.userservice.service.CreateUserRequest
-import com.clockwise.userservice.service.UpdateUserRequest
-import com.clockwise.userservice.service.UserDto
-import com.clockwise.userservice.service.UserService
+import com.clockwise.userservice.service.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -15,6 +13,8 @@ import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.security.core.context.SecurityContext
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 
 @RestController
 @RequestMapping("/v1/users")
@@ -63,5 +63,13 @@ class UserController(private val userService: UserService) {
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     fun getUsersByRestaurantId(@PathVariable restaurantId: UUID): Flow<UserDto> {
         return userService.getUsersByRestaurantId(restaurantId)
+    }
+    private val logger = LoggerFactory.getLogger(UserController::class.java)
+    @GetMapping("/without-business-unit")
+    suspend fun getUsersWithoutBusinessUnit(
+        @RequestParam(required = false) email: String?
+    ): Flow<UserDto> = coroutineScope {
+        logger.info("Getting users without business unit")
+        userService.getUsersWithoutBusinessUnit(email)
     }
 }
