@@ -41,6 +41,10 @@ data class UpdateUserRequest(
     val businessUnitName: String? = null
 )
 
+data class UpdateBusinessUnitRequest(
+    val businessUnitId: String
+)
+
 private fun User.toDto() = UserDto(
     id = id,
     username = username,
@@ -54,7 +58,8 @@ private fun User.toDto() = UserDto(
 class UserService(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val transactionalOperator: TransactionalOperator
+    private val transactionalOperator: TransactionalOperator,
+    private val kafkaProducerService: KafkaProducerService
 ): ReactiveUserDetailsService {
     private val logger = LoggerFactory.getLogger(UserService::class.java)
 
@@ -101,7 +106,7 @@ class UserService(
             ?: throw NoSuchElementException("User not found with username: $username")
     }
 
-    suspend fun updateUser(id: UUID, request: UpdateUserRequest): UserDto {
+    suspend fun updateUser(id: String, request: UpdateUserRequest): UserDto {
         val user = userRepository.findById(id)
             ?: throw NoSuchElementException("User not found with ID: $id")
 
@@ -120,7 +125,8 @@ class UserService(
             email = request.email ?: user.email,
             password = request.password?.let { passwordEncoder.encode(it) } ?: user.password,
             role = request.role ?: user.role,
-           // restaurantId = request.restaurantId ?: user.restaurantId
+            businessUnitId = request.businessUnitId ?: user.businessUnitId,
+            businessUnitName = request.businessUnitName ?: user.businessUnitName
         )
 
         return userRepository.save(updatedUser).toDto()
@@ -157,5 +163,21 @@ class UserService(
                 }
             }
         }
+    }
+
+    suspend fun updateUserBusinessUnit(id: String, request: UpdateBusinessUnitRequest): UserDto {
+        val user = userRepository.findById(id)
+            ?: throw NoSuchElementException("User not found with ID: $id")
+
+        val updatedUser = user.copy(
+            businessUnitId = request.businessUnitId
+        )
+
+        val savedUser = userRepository.save(updatedUser).toDto()
+        
+        // Send Kafka message to request business unit name
+        kafkaProducerService.requestBusinessUnitName(id, request.businessUnitId)
+        
+        return savedUser
     }
 }

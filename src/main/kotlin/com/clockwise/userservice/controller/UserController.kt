@@ -28,7 +28,7 @@ class UserController(private val userService: UserService) {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+//    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     suspend fun getUserById(@PathVariable id: String): ResponseEntity<UserDto> {
         println("NAANANANANNA")
         return ResponseEntity.ok(userService.getUserById(id))
@@ -46,10 +46,18 @@ class UserController(private val userService: UserService) {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
     suspend fun updateUser(
-        @PathVariable id: UUID,
+        @PathVariable id: String,
         @RequestBody request: UpdateUserRequest
     ): ResponseEntity<UserDto> {
         return ResponseEntity.ok(userService.updateUser(id, request))
+    }
+
+    @PutMapping("/{id}/business-unit")
+    suspend fun updateUserBusinessUnit(
+        @PathVariable id: String,
+        @RequestBody request: UpdateBusinessUnitRequest
+    ): ResponseEntity<UserDto> {
+        return ResponseEntity.ok(userService.updateUserBusinessUnit(id, request))
     }
 
     @DeleteMapping("/{id}")

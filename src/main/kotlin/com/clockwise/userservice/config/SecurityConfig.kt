@@ -71,6 +71,7 @@ class SecurityConfig(
                 it.pathMatchers(HttpMethod.PUT, "/v1/users/{id}").hasAnyRole("ADMIN", "MANAGER")
                 it.pathMatchers(HttpMethod.DELETE, "/v1/users/{id}").hasRole("ADMIN")
                 it.pathMatchers(HttpMethod.GET, "/v1/without-business-unit").permitAll()
+                it.pathMatchers(HttpMethod.PUT, "/v1/users/{id}/business-unit").permitAll()
                 it.anyExchange().authenticated()
             }
             .addFilterAt(authFilter, SecurityWebFiltersOrder.AUTHENTICATION)
