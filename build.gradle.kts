@@ -45,12 +45,11 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("org.testcontainers:r2dbc")
 	testImplementation("org.testcontainers:postgresql")
+	testImplementation("org.testcontainers:kafka")
 	testRuntimeOnly("com.h2database:h2")
 	testRuntimeOnly("io.r2dbc:r2dbc-h2")
 	runtimeOnly("org.postgresql:r2dbc-postgresql")
-//	runtimeOnly("org.flywaydb:flyway-core")
 	implementation("org.flywaydb:flyway-core")
-	// Add PostgreSQL JDBC driver for Flyway
 	implementation("org.postgresql:postgresql")
 
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -58,6 +57,8 @@ dependencies {
 	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test")
 	testImplementation("io.mockk:mockk:1.13.10")
+	testImplementation("org.mockito:mockito-core:5.10.0")
+	testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
 	testImplementation("org.junit.jupiter:junit-jupiter-api")
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
