@@ -66,13 +66,13 @@ class UserController(private val userService: UserService) {
         userService.deleteUser(id)
         return ResponseEntity.noContent().build()
     }
-
+    private val logger = LoggerFactory.getLogger(UserController::class.java)
     @GetMapping("/restaurant/{restaurantId}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
-    fun getUsersByRestaurantId(@PathVariable restaurantId: UUID): Flow<UserDto> {
+//    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    fun getUsersByRestaurantId(@PathVariable restaurantId: String): Flow<UserDto> {
         return userService.getUsersByRestaurantId(restaurantId)
     }
-    private val logger = LoggerFactory.getLogger(UserController::class.java)
+
     @GetMapping("/without-business-unit")
     suspend fun getUsersWithoutBusinessUnit(
         @RequestParam(required = false) email: String?

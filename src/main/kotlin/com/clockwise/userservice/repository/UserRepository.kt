@@ -12,8 +12,8 @@ interface UserRepository : CoroutineCrudRepository<User, UUID> {
     suspend fun findByUsername(username: String): User?
     suspend fun findByEmail(email: String): User?
 
-    @Query("SELECT * FROM users WHERE restaurant_id = :restaurantId")
-    fun findAllByRestaurantId(restaurantId: UUID): Flow<User>
+    @Query("SELECT * FROM users WHERE business_unit_id = :restaurantId")
+    fun findAllByBusinessUnitId(restaurantId: String): Flow<User>
 
     @Query("SELECT COUNT(*) > 0 FROM users WHERE email = :email")
     suspend fun existsByEmail(email: String): Boolean

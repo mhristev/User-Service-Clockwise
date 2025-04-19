@@ -1,0 +1,12 @@
+spring:
+  r2dbc:
+    url: r2dbc:tc:postgresql:///test_db
+    username: test
+    password: test
+  flyway:
+    url: jdbc:tc:postgresql:///test_db
+    user: test
+    password: test
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration 

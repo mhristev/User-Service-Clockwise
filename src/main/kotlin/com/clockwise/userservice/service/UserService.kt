@@ -139,8 +139,8 @@ class UserService(
         userRepository.deleteById(id)
     }
 
-    fun getUsersByRestaurantId(restaurantId: UUID): Flow<UserDto> {
-        return userRepository.findAllByRestaurantId(restaurantId).map { it.toDto() }
+    fun getUsersByRestaurantId(restaurantId: String): Flow<UserDto> {
+        return userRepository.findAllByBusinessUnitId(restaurantId).map { it.toDto() }
     }
 
     fun getUsersWithoutBusinessUnit(email: String? = null): Flow<UserDto> {
