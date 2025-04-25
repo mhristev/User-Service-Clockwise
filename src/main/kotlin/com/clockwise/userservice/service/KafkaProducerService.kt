@@ -11,6 +11,12 @@ data class BusinessUnitNameRequest(
     val businessUnitId: String
 )
 
+data class UserActivityEvent(
+    val userId: String,
+    val timestamp: Long,
+    val source: String = "user-service"
+)
+
 @Service
 class KafkaProducerService(
     private val kafkaTemplate: KafkaTemplate<String, String>,
@@ -20,6 +26,9 @@ class KafkaProducerService(
 
     @Value("\${kafka.topic.business-unit-name-requests}")
     private lateinit var businessUnitNameRequestsTopic: String
+    
+    @Value("\${kafka.topic.user-activity}")
+    private lateinit var userActivityTopic: String
 
     fun requestBusinessUnitName(userId: String, businessUnitId: String) {
         try {

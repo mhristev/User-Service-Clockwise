@@ -1,7 +1,12 @@
 package com.clockwise.userservice.service
 
+import com.clockwise.userservice.domain.PrivacyConsent
 import com.clockwise.userservice.domain.User
 import com.clockwise.userservice.domain.UserRole
+import com.clockwise.userservice.dto.ConsentResponse
+import com.clockwise.userservice.dto.ConsentUpdateRequest
+import com.clockwise.userservice.dto.toResponse
+import com.clockwise.userservice.dto.toDomain
 import com.clockwise.userservice.repository.UserRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -22,7 +27,9 @@ data class UserDto(
     val email: String,
     val role: UserRole,
     val businessUnitId: String?,
-    val businessUnitName: String?
+    val businessUnitName: String?,
+    val hasProvidedConsent: Boolean = false,
+    val consentVersion: String? = null
 )
 
 data class CreateUserRequest(
@@ -30,6 +37,10 @@ data class CreateUserRequest(
     val email: String,
     val password: String,
     val role: UserRole,
+    val privacyConsent: PrivacyConsent? = null,
+    val createdAt: Long = System.currentTimeMillis(),
+    val lastSeenAt: Long = System.currentTimeMillis(),
+    val dataRetentionDate: Long? = null
 )
 
 data class UpdateUserRequest(
@@ -51,7 +62,9 @@ private fun User.toDto() = UserDto(
     email = email,
     role = role,
     businessUnitId = businessUnitId,
-    businessUnitName = businessUnitName
+    businessUnitName = businessUnitName,
+    hasProvidedConsent = privacyConsent != null,
+    consentVersion = consentVersion
 )
 
 @Service
@@ -72,19 +85,30 @@ class UserService(
             throw IllegalArgumentException("Username already in use")
         }
 
+        // Determine current privacy policy version - in a real system, this would be fetched from a config
+        val currentConsentVersion = "1.0"
+
         val user = User(
             username = request.username,
             email = request.email,
             password = passwordEncoder.encode(request.password),
             role = request.role,
             businessUnitId = null,
-            businessUnitName = null
+            businessUnitName = null,
+            privacyConsent = request.privacyConsent,
+            consentVersion = if (request.privacyConsent != null) currentConsentVersion else null,
+            createdAt = request.createdAt,
+            lastSeenAt = request.lastSeenAt,
+            dataRetentionDate = request.dataRetentionDate
         )
-        val userDto = userRepository.save(user).toDto()
+        
+        val savedUser = userRepository.save(user)
+        val userDto = savedUser.toDto()
 
-      //  val businessUnitName = userDto.restaurantId?.let { businessUnitCacheService.getBusinessUnitName(it) }
-    //    logger.info("222222222222222222222222222222222222222222 $businessUnitName")
-      //  userDto.businessUnitName = businessUnitName
+        // Log consent for audit trail if consent was provided
+        if (request.privacyConsent != null) {
+            logger.info("User created with initial privacy consent: ${request.privacyConsent}")
+        }
 
         return userDto
     }
@@ -179,5 +203,103 @@ class UserService(
         kafkaProducerService.requestBusinessUnitName(id, request.businessUnitId)
         
         return savedUser
+    }
+
+    /**
+     * Update a user's privacy consent settings
+     * 
+     * @param userId The ID of the user
+     * @param request The consent update request
+     * @return The updated consent information
+     */
+    suspend fun updateUserConsent(userId: String, request: ConsentUpdateRequest): ConsentResponse {
+        val user = userRepository.findById(userId)
+            ?: throw NoSuchElementException("User not found with ID: $userId")
+        
+        // Determine current privacy policy version - in a real system, this would be fetched from a config
+        val currentConsentVersion = "1.0"
+            
+        val updatedConsent = request.toDomain(user.privacyConsent)
+        
+        val updatedUser = user.copy(
+            privacyConsent = updatedConsent,
+            consentVersion = currentConsentVersion
+        )
+        
+        val savedUser = userRepository.save(updatedUser)
+        
+        // Log consent for audit trail
+        logger.info("Updated privacy consent for user $userId: $updatedConsent")
+        
+        return savedUser.privacyConsent!!.toResponse(userId, savedUser.consentVersion)
+    }
+    
+    /**
+     * Get a user's current privacy consent settings
+     * 
+     * @param userId The ID of the user
+     * @return The user's consent information
+     */
+    suspend fun getUserConsent(userId: String): ConsentResponse {
+        val user = userRepository.findById(userId)
+            ?: throw NoSuchElementException("User not found with ID: $userId")
+            
+        val privacyConsent = user.privacyConsent ?: PrivacyConsent()
+        
+        return privacyConsent.toResponse(userId, user.consentVersion)
+    }
+    
+    /**
+     * Withdraw all user consent
+     * 
+     * @param userId The ID of the user
+     * @return The updated consent information with all consent flags set to false
+     */
+    suspend fun withdrawAllConsent(userId: String): ConsentResponse {
+        val user = userRepository.findById(userId)
+            ?: throw NoSuchElementException("User not found with ID: $userId")
+            
+        val withdrawnConsent = PrivacyConsent(
+            marketingConsent = false,
+            analyticsConsent = false,
+            thirdPartyDataSharingConsent = false,
+            consentTimestamp = user.privacyConsent?.consentTimestamp ?: System.currentTimeMillis()
+        )
+        
+        val updatedUser = user.copy(
+            privacyConsent = withdrawnConsent
+        )
+        
+        val savedUser = userRepository.save(updatedUser)
+        
+        // Log consent withdrawal for audit trail
+        logger.info("All consent withdrawn for user $userId")
+        
+        return savedUser.privacyConsent!!.toResponse(userId, savedUser.consentVersion)
+    }
+    
+    /**
+     * Set the data retention date for a user
+     * 
+     * @param userId The ID of the user
+     * @param retentionPeriodDays Number of days before data should be deleted/anonymized
+     * @return The updated user DTO
+     */
+    suspend fun setDataRetentionDate(userId: String, retentionPeriodDays: Int): UserDto {
+        val user = userRepository.findById(userId)
+            ?: throw NoSuchElementException("User not found with ID: $userId")
+            
+        // Calculate retention date based on current time plus retention period
+        val retentionDate = System.currentTimeMillis() + (retentionPeriodDays * 24 * 60 * 60 * 1000L)
+        
+        val updatedUser = user.copy(
+            dataRetentionDate = retentionDate
+        )
+        
+        val savedUser = userRepository.save(updatedUser)
+        
+        logger.info("Set data retention date for user $userId to ${Date(retentionDate)}")
+        
+        return savedUser.toDto()
     }
 }

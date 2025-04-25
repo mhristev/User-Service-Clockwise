@@ -65,6 +65,7 @@ class SecurityConfig(
             .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
             .authorizeExchange {
                 it.pathMatchers(HttpMethod.POST, "/v1/auth/login", "/v1/auth/refresh", "/v1/auth/register").permitAll()
+                it.pathMatchers(HttpMethod.GET, "/v1/privacy-policy").permitAll()
                 it.pathMatchers(HttpMethod.POST, "/v1/users").hasAnyAuthority("ADMIN","MANAGER")
                 it.pathMatchers(HttpMethod.GET, "/v1/users/{id}").permitAll()
                 it.pathMatchers(HttpMethod.GET, "/v1/users/me").authenticated()
@@ -72,6 +73,13 @@ class SecurityConfig(
                 it.pathMatchers(HttpMethod.DELETE, "/v1/users/{id}").hasRole("ADMIN")
                 it.pathMatchers(HttpMethod.GET, "/v1/without-business-unit").permitAll()
                 it.pathMatchers(HttpMethod.PUT, "/v1/users/{id}/business-unit").permitAll()
+                
+                // GDPR consent endpoints - Each user should only manage their own consent
+                it.pathMatchers(HttpMethod.GET, "/v1/users/consent/{userId}").authenticated()
+                it.pathMatchers(HttpMethod.PUT, "/v1/users/consent/{userId}").authenticated()
+                it.pathMatchers(HttpMethod.DELETE, "/v1/users/consent/{userId}").authenticated()
+                it.pathMatchers(HttpMethod.PUT, "/v1/users/consent/{userId}/retention").hasAnyRole("ADMIN")
+                
                 it.anyExchange().permitAll()
             }
             .addFilterAt(authFilter, SecurityWebFiltersOrder.AUTHENTICATION)
