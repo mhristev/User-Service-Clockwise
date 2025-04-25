@@ -2,6 +2,7 @@ package com.clockwise.userservice
 
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -32,6 +33,17 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException::class)
     fun handleBadRequest(ex: IllegalArgumentException, exchange: ServerWebExchange): ResponseEntity<ApiError> {
+        if (ex.message?.contains("password") == true || ex.message?.contains("email") == true || 
+            exchange.request.path.value().contains("/auth/")) {
+            val error = ApiError(
+                status = HttpStatus.UNAUTHORIZED.value(),
+                error = HttpStatus.UNAUTHORIZED.reasonPhrase,
+                message = ex.message ?: "Authentication failed",
+                path = exchange.request.path.value()
+            )
+            return ResponseEntity(error, HttpStatus.UNAUTHORIZED)
+        }
+        
         val error = ApiError(
             status = HttpStatus.BAD_REQUEST.value(),
             error = HttpStatus.BAD_REQUEST.reasonPhrase,
@@ -39,6 +51,17 @@ class GlobalExceptionHandler {
             path = exchange.request.path.value()
         )
         return ResponseEntity(error, HttpStatus.BAD_REQUEST)
+    }
+    
+    @ExceptionHandler(AuthenticationException::class)
+    fun handleAuthenticationException(ex: AuthenticationException, exchange: ServerWebExchange): ResponseEntity<ApiError> {
+        val error = ApiError(
+            status = HttpStatus.UNAUTHORIZED.value(),
+            error = HttpStatus.UNAUTHORIZED.reasonPhrase,
+            message = ex.message ?: "Authentication failed",
+            path = exchange.request.path.value()
+        )
+        return ResponseEntity(error, HttpStatus.UNAUTHORIZED)
     }
 
     @ExceptionHandler(Exception::class)

@@ -167,8 +167,8 @@ class UserService(
     }
 
     suspend fun getUserByUsername(username: String): UserDto {
-        return userRepository.findByUsername(username)?.toDto()
-            ?: throw NoSuchElementException("User not found with username: $username")
+        // Simply delegate to getUserByEmail since username is the email
+        return getUserByEmail(username)
     }
 
     suspend fun updateUser(id: String, request: UpdateUserRequest): UserDto {

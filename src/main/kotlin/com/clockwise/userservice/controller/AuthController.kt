@@ -32,6 +32,15 @@ data class RegisterRequest(
     val privacyPolicyAccepted: Boolean = false
 )
 
+/**
+ * Standard error response
+ */
+data class ErrorResponse(
+    val status: Int,
+    val error: String,
+    val message: String
+)
+
 @RestController
 @RequestMapping("/v1/auth")
 class AuthController(private val authService: AuthService, private val userService: UserService) {
@@ -74,9 +83,22 @@ class AuthController(private val authService: AuthService, private val userServi
     }
 
     @PostMapping("/login")
-    suspend fun login(@RequestBody request: AuthRequest): Mono<ResponseEntity<AuthResponse>> {
+    suspend fun login(@RequestBody request: AuthRequest): Mono<ResponseEntity<Any>> {
         return authService.login(request)
-            .map { ResponseEntity.ok(it) }
+            .map { ResponseEntity.ok(it) as ResponseEntity<Any> }
+            .onErrorResume { e ->
+                Mono.just(
+                    ResponseEntity
+                        .status(HttpStatus.UNAUTHORIZED)
+                        .body(
+                            ErrorResponse(
+                                status = HttpStatus.UNAUTHORIZED.value(),
+                                error = "Unauthorized",
+                                message = "Invalid email or password"
+                            )
+                        ) as ResponseEntity<Any>
+                )
+            }
     }
 
     @PostMapping("/refresh")

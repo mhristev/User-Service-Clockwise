@@ -13,7 +13,7 @@ import reactor.core.publisher.Mono
 import java.util.*
 
 data class AuthRequest(
-    val username: String,
+    val email: String,
     val password: String
 )
 
@@ -39,26 +39,27 @@ class AuthService(
 ) {
 
     fun login(request: AuthRequest): Mono<AuthResponse> {
-    return userDetailsService.findByUsername(request.username)
-        .filter { userDetails ->
-            passwordEncoder.matches(request.password, userDetails.password)
-        }
-        .switchIfEmpty(Mono.error(IllegalArgumentException("Invalid username or password")))
-        .flatMap { userDetails ->
-            mono {
-                val user = userService.getUserByUsername(userDetails.username)
-                val accessToken = jwtUtils.generateToken(userDetails)
-                val refreshToken = generateRefreshToken(user.id!!)
+        return userDetailsService.findByUsername(request.email)
+            .switchIfEmpty(Mono.error(IllegalArgumentException("User not found with email: ${request.email}")))
+            .flatMap { userDetails ->
+                if (passwordEncoder.matches(request.password, userDetails.password)) {
+                    mono {
+                        val user = userService.getUserByEmail(userDetails.username)
+                        val accessToken = jwtUtils.generateToken(userDetails)
+                        val refreshToken = generateRefreshToken(user.id!!)
 
-                AuthResponse(
-                    token = accessToken,
-                    refreshToken = refreshToken,
-                    expiresIn = jwtUtils.getExpirationDate(accessToken).time - System.currentTimeMillis(),
-                    user = user
-                )
+                        AuthResponse(
+                            token = accessToken,
+                            refreshToken = refreshToken,
+                            expiresIn = jwtUtils.getExpirationDate(accessToken).time - System.currentTimeMillis(),
+                            user = user
+                        )
+                    }
+                } else {
+                    Mono.error(IllegalArgumentException("Incorrect password"))
+                }
             }
-        }
-}
+    }
 
     suspend fun refreshToken(request: RefreshTokenRequest): AuthResponse {
         val refreshToken = refreshTokenRepository.findByToken(request.refreshToken)
