@@ -1,6 +1,7 @@
 package com.clockwise.userservice.controller
 
 import com.clockwise.userservice.service.*
+import com.clockwise.userservice.domain.UserStatus
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -79,5 +80,23 @@ class UserController(private val userService: UserService) {
     ): Flow<UserDto> = coroutineScope {
         logger.info("Getting users without business unit")
         userService.getUsersWithoutBusinessUnit(email)
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    suspend fun updateUserStatus(
+        @PathVariable id: String,
+        @RequestBody request: UpdateUserStatusRequest
+    ): ResponseEntity<UserDto> {
+        val user = userService.updateUserStatus(id, request.status)
+        return ResponseEntity.ok(user)
+    }
+
+    @GetMapping("/status/{status}")
+    @PreAuthorize("hasAuthority('ADMIN')")
+    fun getUsersByStatus(
+        @PathVariable status: UserStatus
+    ): Flow<UserDto> {
+        return userService.getUsersByStatus(status)
     }
 }

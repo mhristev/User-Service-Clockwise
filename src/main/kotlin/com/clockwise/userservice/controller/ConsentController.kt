@@ -41,19 +41,19 @@ class ConsentController(private val userService: UserService) {
         return ResponseEntity.ok(userService.withdrawAllConsent(userId))
     }
     
-    /**
-     * Set data retention period for a user
-     */
-    @PutMapping("/{userId}/retention")
-    suspend fun setDataRetentionPeriod(
-        @PathVariable userId: String,
-        @RequestParam retentionPeriodDays: Int
-    ): ResponseEntity<Map<String, Any>> {
-        userService.setDataRetentionDate(userId, retentionPeriodDays)
-        return ResponseEntity.ok(mapOf(
-            "userId" to userId,
-            "retentionPeriodDays" to retentionPeriodDays,
-            "message" to "Data retention period set successfully"
-        ))
-    }
+//    /**
+//     * Set data retention period for a user
+//     */
+//    @PutMapping("/{userId}/retention")
+//    suspend fun setDataRetentionPeriod(
+//        @PathVariable userId: String,
+//        @RequestParam retentionPeriodDays: Int
+//    ): ResponseEntity<Map<String, Any>> {
+//        userService.setDataRetentionDate(userId, retentionPeriodDays)
+//        return ResponseEntity.ok(mapOf(
+//            "userId" to userId,
+//            "retentionPeriodDays" to retentionPeriodDays,
+//            "message" to "Data retention period set successfully"
+//        ))
+//    }
 } 

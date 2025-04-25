@@ -25,6 +25,7 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.kafka:spring-kafka")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+	implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 	implementation("io.jsonwebtoken:jjwt-api:0.11.5")
 	implementation("io.jsonwebtoken:jjwt-impl:0.11.5")
 	implementation("io.jsonwebtoken:jjwt-jackson:0.11.5")
@@ -37,9 +38,6 @@ dependencies {
 	testImplementation("org.springframework.security:spring-security-test")
 	testImplementation("org.springframework.kafka:spring-kafka-test")
 
-	implementation("org.springframework.boot:spring-boot-starter-data-redis")
-	implementation("org.springframework.boot:spring-boot-starter-cache")
-
 	implementation("org.flywaydb:flyway-database-postgresql")
 	testImplementation("org.testcontainers:junit-jupiter")
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
@@ -48,7 +46,7 @@ dependencies {
 	testImplementation("org.testcontainers:kafka")
 	testRuntimeOnly("com.h2database:h2")
 	testRuntimeOnly("io.r2dbc:r2dbc-h2")
-	runtimeOnly("org.postgresql:r2dbc-postgresql")
+	implementation("org.postgresql:r2dbc-postgresql")
 	implementation("org.flywaydb:flyway-core")
 	implementation("org.postgresql:postgresql")
 

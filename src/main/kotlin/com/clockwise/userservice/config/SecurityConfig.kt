@@ -80,6 +80,11 @@ class SecurityConfig(
                 it.pathMatchers(HttpMethod.DELETE, "/v1/users/consent/{userId}").authenticated()
                 it.pathMatchers(HttpMethod.PUT, "/v1/users/consent/{userId}/retention").hasAnyRole("ADMIN")
                 
+                // GDPR rights endpoints
+                it.pathMatchers(HttpMethod.DELETE, "/v1/gdpr/erase-me").authenticated() // Personal right to erasure
+                it.pathMatchers(HttpMethod.DELETE, "/v1/gdpr/users/{userId}/erase").hasRole("ADMIN") // Admin function
+                it.pathMatchers(HttpMethod.GET, "/v1/gdpr/my-data").authenticated() // Personal right to access
+                
                 it.anyExchange().permitAll()
             }
             .addFilterAt(authFilter, SecurityWebFiltersOrder.AUTHENTICATION)

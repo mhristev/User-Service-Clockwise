@@ -69,7 +69,7 @@ class AuthService(
         }
 
         val user = userService.getUserById(refreshToken.userId)
-        val userDetails = userDetailsService.findByUsername(user.username).block()
+        val userDetails = userDetailsService.findByUsername(user.email).block()
             ?: throw IllegalStateException("User not found for refresh token")
 
         val accessToken = jwtUtils.generateToken(userDetails)

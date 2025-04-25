@@ -19,10 +19,11 @@ import org.springframework.http.*
  * Registration request with GDPR consent fields
  */
 data class RegisterRequest(
-    val username: String,
     val email: String,
     val password: String,
-    val restaurantId: String? = null,
+    val firstName: String,
+    val lastName: String,
+    val phoneNumber: String,
     // GDPR consent fields
     val marketingConsent: Boolean = false,
     val analyticsConsent: Boolean = false,
@@ -36,34 +37,40 @@ data class RegisterRequest(
 class AuthController(private val authService: AuthService, private val userService: UserService) {
     @PostMapping("/register")
     suspend fun register(@RequestBody request: RegisterRequest): ResponseEntity<UserDto> {
-        // Validate that privacy policy has been accepted
-        if (!request.privacyPolicyAccepted) {
-            throw IllegalArgumentException("You must accept the privacy policy to register")
-        }
-        
-        val currentTime = System.currentTimeMillis()
-        // Set retention date 5 years from registration (lastSeenAt will be updated by the filter on subsequent requests)
-        val retentionDate = currentTime + (5L * 365 * 24 * 60 * 60 * 1000)
-        
-        // Convert the registration request to a create user request with EMPLOYEE role
-        val createUserRequest = CreateUserRequest(
-            username = request.username,
-            email = request.email,
-            password = request.password,
-            role = UserRole.EMPLOYEE,
-            // Add privacy consent information
-            privacyConsent = PrivacyConsent(
-                marketingConsent = request.marketingConsent,
-                analyticsConsent = request.analyticsConsent,
-                thirdPartyDataSharingConsent = request.thirdPartyDataSharingConsent
-            ),
-            createdAt = currentTime,
-            lastSeenAt = currentTime,
-            dataRetentionDate = retentionDate
-        )
+        try {
+            // Validate that privacy policy has been accepted
+            if (!request.privacyPolicyAccepted) {
+                throw IllegalArgumentException("You must accept the privacy policy to register")
+            }
+            
+            // Log registration attempt
+            println("Registration attempt for email: ${request.email}")
+            
+            // Convert the registration request to a create user request with EMPLOYEE role
+            val createUserRequest = CreateUserRequest(
+                email = request.email,
+                password = request.password,
+                firstName = request.firstName,
+                lastName = request.lastName,
+                phoneNumber = request.phoneNumber,
+                role = UserRole.EMPLOYEE,
+                // Add privacy consent information
+                privacyConsent = PrivacyConsent(
+                    marketingConsent = request.marketingConsent,
+                    analyticsConsent = request.analyticsConsent,
+                    thirdPartyDataSharingConsent = request.thirdPartyDataSharingConsent
+                )
+            )
 
-        val createdUser = userService.createUser(createUserRequest)
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser)
+            println("Attempting to create user with email: ${request.email}")
+            val createdUser = userService.createUser(createUserRequest)
+            println("User created successfully with ID: ${createdUser.id}")
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser)
+        } catch (e: Exception) {
+            println("Error during registration: ${e.message}")
+            e.printStackTrace()
+            throw e
+        }
     }
 
     @PostMapping("/login")
